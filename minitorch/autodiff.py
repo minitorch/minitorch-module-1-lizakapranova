@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Tuple
+from typing import Any, Iterable, List, Tuple, Generator
 
 from typing_extensions import Protocol
 
@@ -22,8 +22,9 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # TODO: Implement for Task 1.1.
-    raise NotImplementedError("Need to implement for Task 1.1")
+    moved_vals = list(vals)
+    moved_vals[arg] += epsilon
+    return (f(*moved_vals) - f(*vals)) / epsilon
 
 
 variable_count = 1
@@ -61,8 +62,29 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    def check_all_parents_visited(var: Variable, visited_vars: set[int]) -> bool:
+        for parent in var.parents:
+            if parent.unique_id not in visited_vars:
+                return False
+        return True
+
+    def _top_sort(root_var: Variable) -> Generator[Variable, None, None]:
+        visited_vars: set[int] = set()
+        stack: list[Variable] = [root_var]
+
+        while len(stack) > 0:
+            cur_var = stack[-1]
+            if cur_var.unique_id in visited_vars or cur_var.is_constant():
+                stack.pop()
+                continue
+            if cur_var.is_leaf() or check_all_parents_visited(cur_var, visited_vars):
+                stack.pop()
+                visited_vars.add(cur_var.unique_id)
+                yield cur_var
+            else:
+                stack.extend([parent for parent in cur_var.parents if parent.unique_id not in visited_vars])
+    return list(_top_sort(variable))[::-1]
+
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -76,8 +98,16 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    sorted_vars = topological_sort(variable)
+    outputs: dict[int, Any] = {variable.unique_id: deriv}
+
+    for var in sorted_vars:
+        cur_deriv = outputs[var.unique_id]
+        if var.is_leaf():
+            var.accumulate_derivative(cur_deriv)
+        else:
+            for parent, d_output in var.chain_rule(cur_deriv):
+                outputs[parent.unique_id] = outputs.get(parent.unique_id, 0) + d_output
 
 
 @dataclass
