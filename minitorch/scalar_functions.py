@@ -185,13 +185,11 @@ class LT(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
-        ctx.save_for_backward()
         return float(operators.lt(a, b))
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
-        (a, b) = ctx.saved_values
-        return float(operators.lt(a, b)) * d_output, float(operators.lt(a, b)) * d_output
+        return 0.0, 0.0
 
 
 class EQ(ScalarFunction):
@@ -199,10 +197,8 @@ class EQ(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
-        ctx.save_for_backward()
         return float(operators.eq(a, b))
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> Tuple[float, float]:
-        (a, b) = ctx.saved_values
-        return float(operators.eq(a, b)) * d_output, float(operators.eq(a, b)) * d_output
+        return 0.0, 0.0
